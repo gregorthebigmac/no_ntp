@@ -1,0 +1,2 @@
+# no_ntp
+The idea behind this is that a bunch of machines are on a LAN, but may not have WAN access, and the machines have no RTC (Real-Time Clock) *or* CMOS battery, and are therefore unable to keep time once they lose power, and reset to factory default date/time, but the machines on the LAN need to be able to talk to one another, and will be unable to SSH into each other because of date/time differences, which invalidates certs, and it's a big headache.
