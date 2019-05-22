@@ -1,4 +1,5 @@
 #include "command/command.hpp"
+#include <cstdlib>
 
 using std::cout;
 using std::endl;
@@ -52,8 +53,9 @@ string purge_newline(string hostname) {
 }
 
 int get_priority(vector<string> terminal_feedback, string hostname) {
+	int i_priority = -1;
 	cout << "Loading priority config file...";
-	string str_priority = "";
+	string s_priority = "";
 	for (int i = 0; i < terminal_feedback.size(); i++) {
 		if (terminal_feedback[i][0] != '#') {
 			string temp = terminal_feedback[i];
@@ -61,15 +63,21 @@ int get_priority(vector<string> terminal_feedback, string hostname) {
 			if (found_host != std::string::npos) {
 				std::size_t found_priority = temp.find("=");
 				if (found_priority != std::string::npos) {
-					str_priority = temp.substr(0,found_priority);
+					s_priority = temp.substr(0,found_priority);
 					break;
 				}
 			}
 		}
 	}
 	cout << "[done]" << endl << endl;
-	if (str_priority != "") {
-		cout << "Found " << hostname << " priority: " << str_priority << endl << endl; }
+	if (s_priority != "") {
+		try {
+			i_priority = atoi(s_priority.c_str()); }
+		catch (const std::invalid_argument& ia) {
+			std::cerr << "Invalid Argument: " << ia.what() << endl;
+			i_priority = -1;
+		}
+	}
 	else cout << hostname << " priority not found!" << endl << endl;
-	return 0;
+	return i_priority;
 }
