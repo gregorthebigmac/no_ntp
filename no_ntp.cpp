@@ -52,7 +52,7 @@ string purge_newline(string hostname) {
 }
 
 int get_priority(vector<string> terminal_feedback, string hostname) {
-	cout << "Loading priority config file..." << endl;
+	cout << "Loading priority config file...";
 	string str_priority = "";
 	for (int i = 0; i < terminal_feedback.size(); i++) {
 		if (terminal_feedback[i][0] != '#') {
@@ -68,6 +68,8 @@ int get_priority(vector<string> terminal_feedback, string hostname) {
 		}
 	}
 	cout << "[done]" << endl << endl;
-	cout << "Found " << hostname << " priority: " << str_priority << endl << endl;
+	if (str_priority != "") {
+		cout << "Found " << hostname << " priority: " << str_priority << endl << endl; }
+	else cout << hostname << " priority not found!" << endl << endl;
 	return 0;
 }
