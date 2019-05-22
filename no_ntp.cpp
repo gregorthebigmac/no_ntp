@@ -1,5 +1,7 @@
 #include "command/command.hpp"
 #include <cstdlib>
+#include <stdlib.h>		// for srand
+#include <time.h>		// for random seed
 
 using std::cout;
 using std::endl;
@@ -9,10 +11,12 @@ using std::vector;
 void error_dump(string failed_command, vector<string> error_dump);
 string purge_newline(string hostname);
 int get_priority(vector<string> terminal_feedback, string hostname);
+bool start_ntpd();
 
 int main() {
 	command cmd;
 	vector<string>terminal_feedback, error_list;
+	
 	string hostname;		// obtained with BASH command "hostname"
 	int my_priority = -1;	// giving it an invalid value by default to ensure no two machines accidentally wind up with identical *valid* values
 	
@@ -29,6 +33,12 @@ int main() {
 	if (error_list.size() < 1) {
 		my_priority = get_priority(terminal_feedback, hostname); }
 	else error_dump(cmd_get_priority, error_list);
+
+	if (my_priority > (-1)) {
+		cout << hostname << " priority is " << my_priority << endl << endl;
+	}
+	
+	bool ntpd_is_up = start_ntpd();
 
 	return 0;
 }
@@ -80,4 +90,15 @@ int get_priority(vector<string> terminal_feedback, string hostname) {
 	}
 	else cout << hostname << " priority not found!" << endl << endl;
 	return i_priority;
+}
+
+bool start_ntpd() {
+	// This entire block is just a placeholder for ntpd succeeding or failing.
+	int ntpd_rand = -1;	// giving it an invalid value by default.
+	srand (time(NULL));
+	ntpd_rand = rand() % 6;	// 1 in 6 chance of ntpd working, one for each VM.
+	if (ntpd_rand == 1) {
+		return true; }
+	else {
+		return false; }
 }
