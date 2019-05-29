@@ -11,11 +11,19 @@ public:
 	ntp_node();		// ctor
 	~ntp_node(){}	// dtor
 
+	// getters
+	std::string get_hostname() { return m_hostname; }
+	int get_priority() { return m_priority; }
+	
+	// setters
+	void set_hostname();	// gets physical machine's hostname from linux
+	void set_priority();		// loads priority from config file
+
+	// doers
+	bool start_ntpd();		// attempts to start ntpd service and returns success/fail as true/false
+
 private:
-	std::string get_hostname_from_nix();
-	int get_priority();
-	void error_dump(std::string failed_command, std::vector<std::string> terminal_feedback, std::vector<std::string> error_list);
-	bool start_ntpd();
+	void _error_dump(std::string failed_command, std::vector<std::string> terminal_feedback, std::vector<std::string> error_list);
 
 	std::string m_hostname;	// actual hostname of the machine
 	int m_priority;			// set by config file
@@ -23,53 +31,30 @@ private:
 	command cmd;			// object for sending BASH commands to a terminal and getting the terminal's feedback
 };
 
-///////////////////////////// Public Methods /////////////////////////////
+///////////////////////////////////////////////// Public Methods /////////////////////////////////////////////////
+
 ntp_node::ntp_node() {
-	using std::cout;
-	using std::endl;
-
-	// upon construction of the object, we get to work getting the hostname and trying to spin up the ntpd service
-	m_hostname = get_hostname_from_nix();
-	
-	if (m_hostname == "error") {
-		cout << "ERROR: Failed to get hostname from host Operating System! Quitting..." << endl;
-		exit(EXIT_FAILURE);
-	}
-	
-	m_priority = get_priority();
-	
-	if (m_priority < 0) {
-		cout << "ERROR! Invalid Priority: [" << m_priority << "]" << endl;
-		cout << "Quitting..." << endl;
-		exit(EXIT_FAILURE);
-	}
-	else cout << "Priority is: " << m_priority << endl << endl;
-
-	m_ntpd_is_up = start_ntpd();
-	if (m_ntpd_is_up) {
-		cout << "ntpd is running!" << endl;
-	}
-	else cout << "ntpd failed to start!" << endl;
+	m_priority = -1;
+	m_hostname = "";
 }
 
-////////////////////////////// Private Methods //////////////////////////////
-std::string ntp_node::get_hostname_from_nix() {
+void ntp_node::set_hostname() {
 	std::vector<std::string> terminal_feedback, error_list;
 	std::string hostname = "";
 	cmd.exec("hostname", terminal_feedback, error_list);
 	if (terminal_feedback.size() == 1) {
+		hostname = terminal_feedback[0];
 		for (int i = 0; i < hostname.size(); i++) {
 			if (hostname[i] == '\n')
 				hostname.erase(i, 1);
 		}
 		std::cout << "Hostname: " << hostname << std::endl << std::endl;
-		return hostname;
+		m_hostname = hostname;
 	}
-	else error_dump("hostname", terminal_feedback, error_list);
-	return "error";
+	else _error_dump("hostname", terminal_feedback, error_list);
 }
 
-int ntp_node::get_priority() {
+void ntp_node::set_priority() {
 	using std::cout;
 	using std::endl;
 	using std::string;
@@ -81,7 +66,7 @@ int ntp_node::get_priority() {
 	vector<string> terminal_feedback, error_list;
 	cmd.exec(cmd_get_priority.c_str(), terminal_feedback, error_list);
 	if (error_list.size() < 1) {
-		cout << "Loading priority config file...";
+		cout << "Loading priority config file..." << endl;
 	for (int i = 0; i < terminal_feedback.size(); i++) {
 		if (terminal_feedback[i][0] != '#') {
 			string temp = terminal_feedback[i];
@@ -101,15 +86,28 @@ int ntp_node::get_priority() {
 		catch (const std::invalid_argument& ia) {
 			std::cerr << "Invalid Argument: " << ia.what() << endl;
 			i_priority = -1;
-			error_dump("convert [std::string s_priority] to [int i_priority]", terminal_feedback, error_list);
+			_error_dump("convert [std::string s_priority] to [int i_priority]", terminal_feedback, error_list);
 		}
 	}
 	else cout << m_hostname << " priority not found! Check config file!" << endl << endl;
-	return i_priority;
+	m_priority = i_priority;
 	}
 }
 
-void ntp_node::error_dump(std::string failed_command, std::vector<std::string> terminal_feedback, std::vector<std::string> error_list) {
+bool ntp_node::start_ntpd() {
+	// This entire function is just a placeholder for ntpd succeeding or failing.
+	int ntpd_rand = -1;	// giving it an invalid value by default.
+	srand (time(NULL));
+	ntpd_rand = rand() % 6;	// 1 in 6 chance of ntpd working, one for each VM.
+	if (ntpd_rand == 1) {
+		return true; }
+	else {
+		return false; }
+}
+
+////////////////////////////////////////////////// Private Methods //////////////////////////////////////////////////
+
+void ntp_node::_error_dump(std::string failed_command, std::vector<std::string> terminal_feedback, std::vector<std::string> error_list) {
 	using std::cout;
 	using std::endl;
 	cout << "Errors encountered when trying to execute command:" << endl;
@@ -123,17 +121,6 @@ void ntp_node::error_dump(std::string failed_command, std::vector<std::string> t
 		cout << error_list[i];
 	}
 	cout << endl << "[DONE]" << endl << endl;
-}
-
-bool ntp_node::start_ntpd() {
-	// This entire function is just a placeholder for ntpd succeeding or failing.
-	int ntpd_rand = -1;	// giving it an invalid value by default.
-	srand (time(NULL));
-	ntpd_rand = rand() % 6;	// 1 in 6 chance of ntpd working, one for each VM.
-	if (ntpd_rand == 1) {
-		return true; }
-	else {
-		return false; }
 }
 
 #endif
