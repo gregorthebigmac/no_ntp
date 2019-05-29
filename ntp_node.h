@@ -98,11 +98,12 @@ bool ntp_node::start_ntpd() {
 	// This entire function is just a placeholder for ntpd succeeding or failing.
 	int ntpd_rand = -1;	// giving it an invalid value by default.
 	srand (time(NULL));
-	ntpd_rand = rand() % 6;	// 1 in 6 chance of ntpd working, one for each VM.
+	ntpd_rand = rand() % 2;	// 1 in 6 chance of ntpd working, one for each VM.
 	if (ntpd_rand == 1) {
-		return true; }
+		m_ntpd_is_up = true; }
 	else {
-		return false; }
+		m_ntpd_is_up = false; }
+	return m_ntpd_is_up;
 }
 
 ////////////////////////////////////////////////// Private Methods //////////////////////////////////////////////////
