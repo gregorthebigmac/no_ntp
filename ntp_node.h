@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include "command/command.hpp"
+#include <fstream>
 
 class ntp_node {
 public:
@@ -24,6 +25,7 @@ public:
 
 private:
 	void _error_dump(std::string failed_command, std::vector<std::string> terminal_feedback, std::vector<std::string> error_list);
+	void _error_dump(std::string failed_command, std::vector<std::string> terminal_feedback);
 
 	std::string m_hostname;	// actual hostname of the machine
 	int m_priority;			// set by config file
@@ -41,14 +43,14 @@ ntp_node::ntp_node() {
 void ntp_node::set_hostname() {
 	std::vector<std::string> terminal_feedback, error_list;
 	std::string hostname = "";
+	std::cout << "Hostname: ";
 	cmd.exec("hostname", terminal_feedback, error_list);
 	if (terminal_feedback.size() == 1) {
 		hostname = terminal_feedback[0];
 		for (int i = 0; i < hostname.size(); i++) {
-			if (hostname[i] == '\n')
-				hostname.erase(i, 1);
+			if (hostname[i] == '\n') {
+				hostname.erase(i, 1); }
 		}
-		std::cout << "Hostname: " << hostname << std::endl << std::endl;
 		m_hostname = hostname;
 	}
 	else _error_dump("hostname", terminal_feedback, error_list);
@@ -59,17 +61,33 @@ void ntp_node::set_priority() {
 	using std::endl;
 	using std::string;
 	using std::vector;
-
+	
 	string s_priority = "";
 	int i_priority = -1;
+	std::ifstream fin;
+	/*
 	string cmd_get_priority = "cat config/priority.cfg";
 	vector<string> terminal_feedback, error_list;
 	cmd.exec(cmd_get_priority.c_str(), terminal_feedback, error_list);
-	if (error_list.size() < 1) {
-		cout << "Loading priority config file..." << endl;
-	for (int i = 0; i < terminal_feedback.size(); i++) {
-		if (terminal_feedback[i][0] != '#') {
-			string temp = terminal_feedback[i];
+	*/
+	vector<string> config_file_contents;
+	fin.open("config/priority.cfg");
+	if (fin.is_open()) {
+		while(!fin.eof()) {
+			string file_line;
+			std::getline(fin, file_line);
+			if (file_line[0] != '#') {
+				config_file_contents.push_back(file_line); }
+		}
+		fin.close();
+	}
+	else {
+		cout << "priority.cfg failed to open! Check file!" << endl; }
+	if (config_file_contents.size() > 0) {
+		cout << "Loading priority config file...";
+	for (int i = 0; i < config_file_contents.size(); i++) {
+		if (config_file_contents[i][0] != '#') {
+			string temp = config_file_contents[i];
 			std::size_t found_host = temp.find(m_hostname);
 			if (found_host != std::string::npos) {
 				std::size_t found_priority = temp.find("=");
@@ -86,7 +104,7 @@ void ntp_node::set_priority() {
 		catch (const std::invalid_argument& ia) {
 			std::cerr << "Invalid Argument: " << ia.what() << endl;
 			i_priority = -1;
-			_error_dump("convert [std::string s_priority] to [int i_priority]", terminal_feedback, error_list);
+			_error_dump("convert [std::string s_priority] to [int i_priority]", config_file_contents);
 		}
 	}
 	else cout << m_hostname << " priority not found! Check config file!" << endl << endl;
@@ -120,6 +138,18 @@ void ntp_node::_error_dump(std::string failed_command, std::vector<std::string> 
 	cout << endl << "Error dump:" << endl << endl;
 	for (int i = 0; i < error_list.size(); i++) {
 		cout << error_list[i];
+	}
+	cout << endl << "[DONE]" << endl << endl;
+}
+
+void ntp_node::_error_dump(std::string failed_command, std::vector<std::string> terminal_feedback) {
+	using std::cout;
+	using std::endl;
+	cout << "Errors encountered when trying to execute command:" << endl;
+	cout << failed_command << endl << endl;
+	cout << "Full terminal feedback:" << endl << endl;
+	for (int i = 0; i < terminal_feedback.size(); i++) {
+		cout << terminal_feedback[i];
 	}
 	cout << endl << "[DONE]" << endl << endl;
 }
